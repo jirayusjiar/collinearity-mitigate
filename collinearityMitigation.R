@@ -10,6 +10,7 @@ setwd(script.dir)
 #install_github("klainfo/DefectData")
 library(DefectData)
 library(compiler)
+library(Hmisc)
 
 enableJIT(3)
 
@@ -18,8 +19,8 @@ enableJIT(3)
 
 
 ## Main
-
-for(targetProjectId in 1:nrow(listData)) {
+for(targetProjectId in 89:89) {
+#for(targetProjectId in 1:nrow(listData)) {
   
   print(paste('ProjectID:', targetProjectId,"START"))
   datasetInfo <<- c(targetProjectId)  
@@ -37,6 +38,40 @@ for(targetProjectId in 1:nrow(listData)) {
   # Finish import dataset
   
   # Mitigate collinearity 
-  
+  redun(
+    as.formula(
+      paste(
+        "~", 
+        paste(indep, collapse = '+')
+        )
+      ), 
+    data = dataset,
+    r2 = 0.9,
+    type = 'adjusted',
+    nk = 0,
+    pr = TRUE
+  )
+  # Variables after #1 redun
+  # pre ACD FOUT_avg FOUT_max FOUT_sum MLOC_sum NBD_avg NBD_max NOF_avg NOF_sum NOM_avg NOT NSF_sum NSM_avg PAR_avg PAR_max VG_avg VG_max 
+  redun(
+      ~pre+ACD+FOUT_avg+FOUT_max+FOUT_sum+MLOC_sum+NBD_avg+NBD_max+NOF_avg+NOF_sum+NOM_avg+NOT+NSF_sum+NSM_avg+PAR_avg+PAR_max+VG_avg+VG_max
+    , 
+    data = dataset,
+    r2 = 0.9,
+    type = 'adjusted',
+    nk = 0,
+    pr = TRUE
+  )
+  # Variables after #2 redun (NOF_sum is removed)
+  # pre ACD FOUT_avg FOUT_max FOUT_sum MLOC_sum NBD_avg NBD_max NOF_avg NOM_avg NOT NSF_sum NSM_avg PAR_avg PAR_max VG_avg VG_max 
+  redun(
+    ~pre+ACD+FOUT_avg+FOUT_max+FOUT_sum+MLOC_sum+NBD_avg+NBD_max+NOF_avg+NOM_avg+NOT+NSF_sum+NSM_avg+PAR_avg+PAR_max+VG_avg+VG_max
+    , 
+    data = dataset,
+    r2 = 0.9,
+    type = 'adjusted',
+    nk = 0,
+    pr = TRUE
+  )
   
 }
