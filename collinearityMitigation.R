@@ -36,7 +36,13 @@ for(targetProjectId in 1:nrow(listData)) {
   indep <- Data$indep
   # Finish import dataset
   
+  trainDataIndex <- sample(nrow(dataset),replace=TRUE)
   # Mitigate collinearity 
-  
+  glmModel <- glm(
+    as.formula(paste(dep,"~",paste(indep, collapse = '+'))), 
+    data=dataset[trainDataIndex,], 
+    family=binomial()
+  )
+  drop1(glmModel, test = "Chisq")
   
 }
