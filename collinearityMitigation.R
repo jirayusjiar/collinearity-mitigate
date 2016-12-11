@@ -14,9 +14,10 @@ library(Hmisc)
 
 enableJIT(3)
 
-## Define global variables and functions
-
-
+## Define functions
+.writeLine <- function(arg1,arg2){
+  write(paste0(arg2,collapse=","),file=arg1,append=TRUE)  
+} writeLine = cmpfun(.writeLine)
 
 ## Main
 for(targetProjectId in 89:89) {
@@ -38,7 +39,7 @@ for(targetProjectId in 89:89) {
   # Finish import dataset
   
   # Mitigate collinearity 
-  redun(
+  rd<-redun(
     as.formula(
       paste(
         "~", 
@@ -51,27 +52,36 @@ for(targetProjectId in 89:89) {
     nk = 0,
     pr = TRUE
   )
-  # Variables after #1 redun
-  # pre ACD FOUT_avg FOUT_max FOUT_sum MLOC_sum NBD_avg NBD_max NOF_avg NOF_sum NOM_avg NOT NSF_sum NSM_avg PAR_avg PAR_max VG_avg VG_max 
-  redun(
-      ~pre+ACD+FOUT_avg+FOUT_max+FOUT_sum+MLOC_sum+NBD_avg+NBD_max+NOF_avg+NOF_sum+NOM_avg+NOT+NSF_sum+NSM_avg+PAR_avg+PAR_max+VG_avg+VG_max
-    , 
-    data = dataset,
-    r2 = 0.9,
-    type = 'adjusted',
-    nk = 0,
-    pr = TRUE
-  )
-  # Variables after #2 redun (NOF_sum is removed)
-  # pre ACD FOUT_avg FOUT_max FOUT_sum MLOC_sum NBD_avg NBD_max NOF_avg NOM_avg NOT NSF_sum NSM_avg PAR_avg PAR_max VG_avg VG_max 
-  redun(
-    ~pre+ACD+FOUT_avg+FOUT_max+FOUT_sum+MLOC_sum+NBD_avg+NBD_max+NOF_avg+NOM_avg+NOT+NSF_sum+NSM_avg+PAR_avg+PAR_max+VG_avg+VG_max
-    , 
-    data = dataset,
-    r2 = 0.9,
-    type = 'adjusted',
-    nk = 0,
-    pr = TRUE
-  )
   
+  # rd$In Leftover variables
+  # rd$Out Deleted variables
+  # Repeat redun until n(rd(n-1)$In) == n(rd(n)$In)
+  nRdIn <- length(rd$In)
+  while(TRUE){
+    rd <- redun(
+      as.formula(
+        paste0(
+          '~',
+          paste0(rd$In,collapse='+')
+        )
+      )
+      , 
+      data = dataset,
+      r2 = 0.9,
+      type = 'adjusted',
+      nk = 0,
+      pr = TRUE
+    )
+    if(nRdIn==length(rd$In)){
+      break
+    } else {
+      nRdIn=length(rd$In)
+    }
+  }
+  cat(
+    targetData,         #Dataset name
+    length(indep),      #n(Indep)
+    nRdIn,              #n(Non-redundant metrics)
+    nRdIn/length(indep),#n(Indep)/n(Non-redundant metrics)
+    rd$In)
 }
